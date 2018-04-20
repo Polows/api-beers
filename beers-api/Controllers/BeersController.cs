@@ -7,6 +7,7 @@ using beersapi.Data;
 using beersapi.Filters;
 using beersapi.Models;
 using beers_api.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -24,16 +25,14 @@ namespace beersapi.Controllers
 			_settings = settings.Value;
 		}
 
-		[HttpGet]
-		//[OnlyJson]
-		public IActionResult GetAll()
+		private IActionResult GetAll()
 		{
 			/*
 			var beers = ((BeersRepository)_beersRepository).BeerAsDbSet;
 			return Ok(beers.First().Brewery.Name);
 			*/
 			//return Ok(_beersRepository.Beers);
-			
+
 			return Ok(_beersRepository.Beers.Select(e => new Beer()
 			{
 				Name = e.Name,
@@ -43,9 +42,13 @@ namespace beersapi.Controllers
 			}));
 		}
 
-		[HttpGet("{id}")]
+		[HttpGet]
 		public IActionResult FilterBeersByName(string name)
 		{
+			if (string.IsNullOrEmpty(name))
+			{
+				return GetAll();
+			}
 			var beers = _beersRepository.GetByName(name).Select(
 				e => new Beer()
 				{
@@ -69,6 +72,7 @@ namespace beersapi.Controllers
 			return Ok(beer);
 		}
 
+		[Authorize] /* Seguridad */
 		[HttpPost]
 		public async Task<IActionResult> AddBeer([FromBody] UpdateBeerRequest beer)
 		{
@@ -81,16 +85,16 @@ namespace beersapi.Controllers
 					BreweryId = beer.BreweryId
 				};
 				await _beersRepository.Add(entity);
-					/*
-				await _beersRepository.Add(new BeerEntity()
-				{
-					Abv = beer.Abv,
-					Name = beer.Name,
-					BreweryId =  beer.BreweryId
-				});
-				*/
-					//return StatusCode((int)System.Net.HttpStatusCode.Created);
-				return new StatusCodeResult((int) System.Net.HttpStatusCode.Created);
+				/*
+			await _beersRepository.Add(new BeerEntity()
+			{
+				Abv = beer.Abv,
+				Name = beer.Name,
+				BreweryId =  beer.BreweryId
+			});
+			*/
+				//return StatusCode((int)System.Net.HttpStatusCode.Created);
+				return new StatusCodeResult((int)System.Net.HttpStatusCode.Created);
 			}
 			else
 			{

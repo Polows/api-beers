@@ -2,12 +2,16 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using beersapi;
+using beersapi.Auth;
 using beersapi.Config;
 using beersapi.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,6 +45,33 @@ namespace beers_api
 				}
 			);
 
+			/* Servicios de autenticacion */
+			/* Cookie
+			services.AddAuthentication(options =>
+			{
+				options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+				options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+				options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+			}).AddCookie(); 
+			*/
+			
+			/* Token
+			services.AddAuthentication(options =>
+			{
+				options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+				options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+			}).AddJwtBearer();
+			*/
+
+			services.AddAuthentication(options =>
+			{
+				options.DefaultAuthenticateScheme = "Fake";
+				options.DefaultChallengeScheme = "Fake";
+
+			}).AddFakeAuth();
+
 			services.AddOptions();
 			//services.Configure<AppSettings>(Configuration);
 			services.Configure<BeersSettings>(Configuration.GetSection("beers"));
@@ -48,6 +79,7 @@ namespace beers_api
 			services.AddDbContext<BeersContext>(options =>
 			{
 				options.UseSqlServer(Configuration["constr"]);
+				options.ConfigureWarnings(w => w.Throw(RelationalEventId.QueryClientEvaluationWarning)); /* Sentencias LINQ que no se puede traducir a SQL */
 			});
 
 			// Usar AutoFac para registrar elementos.
@@ -95,6 +127,14 @@ namespace beers_api
 			//		rb.MapRoute("default", "{controller}/{action}", new { action = "GetAll" });
 			//	}
 			//);
+
+			/*
+			Anterior
+			app.UseCookieAuthentication();
+			app.UseJwtBearerAuthentication();
+			*/
+			/* Nuevo */
+			app.UseAuthentication();
 
 			//app.UseMiddleware<XMethodOverrideMiddleware>();
 			app.UseMethodOverride();
